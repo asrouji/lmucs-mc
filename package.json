@@ -1,0 +1,21 @@
+{
+  "name": "lmucs-mc",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node main.js",
+    "dev": "nodemon main.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "discord.js": "^13.1.0",
+    "dotenv": "^10.0.0",
+    "node": "^16.9.1",
+    "node-fetch": "^3.0.0",
+    "nodemon": "^2.0.12"
+  }
+}
