@@ -20,6 +20,9 @@ client.on('ready', () => {
     commands = client.application?.commands;
   }
 
+  // commands?.get()
+  //guild.commands.delete('123456789012345678')
+
   commands?.create({
     name: 'ping',
     description: 'Prints the bot and API latency',
@@ -89,6 +92,7 @@ client.on('interactionCreate', async (interaction) => {
       });
   } else if (commandName === 'whitelist') {
     const name = options.getString('username');
+    const id = interaction.member.id;
 
     await interaction.deferReply({
       ephemeral: false,
@@ -97,7 +101,7 @@ client.on('interactionCreate', async (interaction) => {
     await new Promise((resolve) => setTimeout(resolve, 5000));
 
     await interaction.editReply({
-      content: `Username **${name}** has been whitelisted on the server 👍`,
+      content: `Username **${name}** has been whitelisted on the server 👍 <@${id}>`,
     });
   }
 });
