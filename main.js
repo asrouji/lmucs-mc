@@ -1,6 +1,8 @@
 import DiscordJS, { Intents, Interaction, MessageEmbed } from 'discord.js';
 import dotenv from 'dotenv';
 import fetch from 'node-fetch';
+import fs from 'fs';
+
 dotenv.config();
 
 const client = new DiscordJS.Client({
@@ -19,9 +21,6 @@ client.on('ready', () => {
   } else {
     commands = client.application?.commands;
   }
-
-  // commands?.get()
-  //guild.commands.delete('123456789012345678')
 
   commands?.create({
     name: 'ping',
@@ -66,6 +65,12 @@ client.on('interactionCreate', async (interaction) => {
       ephemeral: false,
     });
 
+    let playerString = "";
+    const playerData = JSON.parse(fs.readFileSync('players.json').toString());
+    for (let player of playerData) {
+      playerString += `${player.nick} (${player.name})\r\n`;
+    }
+
     fetch('https://api.mcsrvstat.us/2/play.emeraldisle.fun')
       .then((response) => response.json())
       .then((data) => {
@@ -81,7 +86,7 @@ client.on('interactionCreate', async (interaction) => {
             })`,
             value: `${
               data.players.list.length > 0
-                ? data.players.list.join('\r\n')
+                ? playerString
                 : '[No Players Online]'
             }`,
           })
@@ -92,16 +97,21 @@ client.on('interactionCreate', async (interaction) => {
       });
   } else if (commandName === 'whitelist') {
     const name = options.getString('username');
-    const id = interaction.member.id;
+    const nick = interaction.member.nickname;
 
     await interaction.deferReply({
       ephemeral: false,
     });
 
-    await new Promise((resolve) => setTimeout(resolve, 5000));
+    let playerData = JSON.parse(fs.readFileSync('players.json').toString());
+    let player = {"nick": nick, "name": name};
+    if (playerData.indexOf(player) === -1) {
+      playerData.push(player);
+      fs.writeFileSync('players.json', JSON.stringify(playerData));
+    }
 
     await interaction.editReply({
-      content: `Username **${name}** has been whitelisted on the server 👍 <@${id}>`,
+      content: `Username **${name}** has been whitelisted on the server 👍`,
     });
   }
 });
