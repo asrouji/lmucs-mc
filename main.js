@@ -10,7 +10,12 @@ const client = new DiscordJS.Client({
 });
 
 client.on('ready', () => {
+
   console.log('Bot is ready!');
+
+  client.user.setActivity("lmucs1.my.pebble.host", {
+    type: "PLAYING",
+  });
 
   const guildId = '870102910447546418';
   const guild = client.guilds.cache.get(guildId);
@@ -65,15 +70,24 @@ client.on('interactionCreate', async (interaction) => {
       ephemeral: false,
     });
 
-    let playerString = "";
     const playerData = JSON.parse(fs.readFileSync('players.json').toString());
-    for (let player of playerData) {
-      playerString += `${player.nick} (${player.name})\r\n`;
-    }
 
     fetch('https://api.mcsrvstat.us/2/play.emeraldisle.fun')
       .then((response) => response.json())
       .then((data) => {
+        let playerString = '';
+        for (let player of data.players.list) {
+          let found = false;
+          for (let user of playerData) {
+            if (player === user.name) {
+              playerString += `${user.name} (${user.nick})\r\n`;
+              found = true;
+            }
+          }
+          if (!found) {
+            playerString += `${player}\r\n`;
+          }
+        }
         const embed = new MessageEmbed()
           .setColor('#5b8731')
           .setAuthor(
@@ -90,28 +104,50 @@ client.on('interactionCreate', async (interaction) => {
                 : '[No Players Online]'
             }`,
           })
-          .setTimestamp();
+          .setTimestamp()
+          .setThumbnail(
+            'https://scontent-lax3-1.xx.fbcdn.net/v/t1.6435-9/69144297_2292516594298688_6969891426372943872_n.jpg?_nc_cat=100&ccb=1-5&_nc_sid=973b4a&_nc_ohc=o1qE9IQfHq8AX9wmrij&_nc_ht=scontent-lax3-1.xx&oh=abcd43c5cca10e088f2f171b525dc046&oe=616D2DD8'
+          );
         interaction.editReply({
           embeds: [embed],
         });
       });
   } else if (commandName === 'whitelist') {
     const name = options.getString('username');
-    const nick = interaction.member.nickname;
+    const nick =
+      interaction.member.nickname !== null
+        ? interaction.member.nickname
+        : interaction.member.user.username;
 
     await interaction.deferReply({
       ephemeral: false,
     });
 
     let playerData = JSON.parse(fs.readFileSync('players.json').toString());
-    let player = {"nick": nick, "name": name};
-    if (playerData.indexOf(player) === -1) {
+    let player = { nick: nick, name: name };
+
+    let response = `Username **${name}** has been whitelisted on the server 👍`;
+    let newPlayer = true;
+
+    for (let user of playerData) {
+      if (user.nick === nick) {
+        newPlayer = false;
+        if (user.name === name) {
+          response = `Username **${name}** is already whitelisted!`;
+        } else {
+          user.name = name;
+          fs.writeFileSync('players.json', JSON.stringify(playerData));
+        }
+      }
+    }
+
+    if (newPlayer) {
       playerData.push(player);
       fs.writeFileSync('players.json', JSON.stringify(playerData));
     }
 
     await interaction.editReply({
-      content: `Username **${name}** has been whitelisted on the server 👍`,
+      content: response,
     });
   }
 });
