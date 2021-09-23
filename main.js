@@ -5,6 +5,8 @@ import fs from 'fs';
 
 dotenv.config();
 
+const CREATE_COMMANDS = false;
+
 const client = new DiscordJS.Client({
   intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES],
 });
@@ -27,28 +29,37 @@ client.on('ready', () => {
     commands = client.application?.commands;
   }
 
-  commands?.create({
-    name: 'ping',
-    description: 'Prints the bot and API latency',
-  });
+  if (CREATE_COMMANDS) {
+    commands?.create({
+      name: 'ping',
+      description: 'Prints the bot and API latency',
+    });
+  
+    commands?.create({
+      name: 'server',
+      description: 'Posts the status of the Minecraft server',
+    });
+  
+    commands?.create({
+      name: 'whitelist',
+      description: 'Adds player to whitelist of the Minecraft server',
+      options: [
+        {
+          name: 'username',
+          description: 'Minecraft username to whitelist',
+          required: true,
+          type: DiscordJS.Constants.ApplicationCommandOptionTypes.STRING,
+        },
+      ],
+    });
 
-  commands?.create({
-    name: 'server',
-    description: 'Posts the status of the Minecraft server',
-  });
+    commands?.create({
+      name: 'playtime',
+      description: 'Displays a leaderboard of players with the most time spent on the server.',
+    });
 
-  commands?.create({
-    name: 'whitelist',
-    description: 'Adds player to whitelist of the Minecraft server',
-    options: [
-      {
-        name: 'username',
-        description: 'Minecraft username to whitelist',
-        required: true,
-        type: DiscordJS.Constants.ApplicationCommandOptionTypes.STRING,
-      },
-    ],
-  });
+  }
+
 });
 
 client.on('interactionCreate', async (interaction) => {
@@ -149,6 +160,51 @@ client.on('interactionCreate', async (interaction) => {
     await interaction.editReply({
       content: response,
     });
+  } else if (commandName === 'playtime') {
+    await interaction.deferReply({
+      ephemeral: false,
+    });
+
+    const playerData = JSON.parse(fs.readFileSync('players.json').toString());
+
+    fetch('https://api.mcsrvstat.us/2/play.emeraldisle.fun')
+      .then((response) => response.json())
+      .then((data) => {
+        let playerString = '';
+        for (let player of data.players.list) {
+          let found = false;
+          for (let user of playerData) {
+            if (player === user.name) {
+              playerString += `${user.name} (${user.nick})\r\n`;
+              found = true;
+            }
+          }
+          if (!found) {
+            playerString += `${player}\r\n`;
+          }
+        }
+        const embed = new MessageEmbed()
+          .setColor('#5b8731')
+          .setAuthor(
+            'Server Playtime Leaderboard',
+            'https://images-ext-1.discordapp.net/external/ha2UA0g2Fsh0wn67g6bU49JA1YOJFqyn2LgPvDS2W2w/https/orig00.deviantart.net/34de/f/2012/204/b/c/grass_block_by_barakaldo-d58bi3u.gif'
+          )
+          .addFields({
+            name: `All Time`,
+            value: `${
+              data.players.list.length > 0
+                ? playerString
+                : '[No Players Online]'
+            }`,
+          })
+          .setTimestamp()
+          .setThumbnail(
+            'https://scontent-lax3-1.xx.fbcdn.net/v/t1.6435-9/69144297_2292516594298688_6969891426372943872_n.jpg?_nc_cat=100&ccb=1-5&_nc_sid=973b4a&_nc_ohc=o1qE9IQfHq8AX9wmrij&_nc_ht=scontent-lax3-1.xx&oh=abcd43c5cca10e088f2f171b525dc046&oe=616D2DD8'
+          );
+        interaction.editReply({
+          embeds: [embed],
+        });
+      });
   }
 });
 
