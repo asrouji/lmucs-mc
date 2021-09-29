@@ -171,16 +171,21 @@ client.on('interactionCreate', async (interaction) => {
       .then((response) => response.json())
       .then((data) => {
         let playerString = '';
+        let count = 0;
         for (let player of data.players.list) {
+          count++;
+          if (count > 5) {
+            break;
+          }
           let found = false;
           for (let user of playerData) {
             if (player === user.name) {
-              playerString += `${user.name} (${user.nick})\r\n`;
+              playerString += `\`${count}\` ${user.name} (${user.nick})\r\n`;
               found = true;
             }
           }
           if (!found) {
-            playerString += `${player}\r\n`;
+            playerString += `\`${count}\` ${player}\r\n`;
           }
         }
         const embed = new MessageEmbed()
