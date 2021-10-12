@@ -17,6 +17,7 @@
     "fs": "^0.0.1-security",
     "node": "^16.9.1",
     "node-fetch": "^3.0.0",
-    "nodemon": "^2.0.12"
+    "nodemon": "^2.0.12",
+    "rcon-client": "^4.2.3"
   }
 }
