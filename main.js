@@ -182,7 +182,7 @@ client.on('interactionCreate', async (interaction) => {
     if (!whitelist_enabled) {
       interaction.reply({
         content: 'Whitelist will open Tuesday at 7:30PM!',
-      })
+      });
       return;
     }
     const name = options.getString('username');
@@ -236,8 +236,17 @@ client.on('interactionCreate', async (interaction) => {
       const name = player.name;
       const nick = player.nick;
       const id = player.id;
-      let response = await rcon.send(`playtime alltime player ${name}`);
-      response = response.substring(2);
+      let responsePlaytime = await rcon.send(`playtime alltime player ${name}`);
+      if (responsePlaytime.indexOf('not found') !== -1) {
+        playerTimes.push({
+          id: id,
+          nick: nick,
+          playtimeArr: [0, 0, 0],
+          totalTime: 0,
+        });
+        continue;
+      }
+      let response = responsePlaytime.substring(2);
       let index = response.indexOf('§9');
       response = response.substring(index + 2);
       response = response.substring(0, response.indexOf('§') - 1);
@@ -247,6 +256,15 @@ client.on('interactionCreate', async (interaction) => {
       response.pop();
       while (response.length < 3) {
         response.unshift('0');
+      }
+      if (responsePlaytime.indexOf('minute') === -1) {
+        response[0] = response[1];
+        response[1] = response[2];
+        response[2] = '0';
+      }
+      if (responsePlaytime.indexOf('hour') === -1 && responsePlaytime.indexOf('day') !== -1) {
+        response[0] = response[1];
+        response[1] = '0';
       }
       response = response.map(Number);
       let totalTime = 1440 * response[0] + 60 * response[1] + response[2];
@@ -268,22 +286,22 @@ client.on('interactionCreate', async (interaction) => {
         .members.fetch(time.id);
       if (
         !member.roles.cache.some((role) => role.id === '895785110614470686') &&
-        time.totalTime > 100*60
+        time.totalTime > 100 * 60
       ) {
         member.roles.add('895785110614470686');
       } else if (
         !member.roles.cache.some((role) => role.id === '895785887718309909') &&
-        time.totalTime > 50*60
+        time.totalTime > 50 * 60
       ) {
         member.roles.add('895785887718309909');
       } else if (
         !member.roles.cache.some((role) => role.id === '895785017303777340') &&
-        time.totalTime > 25*60
+        time.totalTime > 25 * 60
       ) {
         member.roles.add('895785017303777340');
       } else if (
         !member.roles.cache.some((role) => role.id === '895784799090929734') &&
-        time.totalTime > 10*60
+        time.totalTime > 10 * 60
       ) {
         member.roles.add('895784799090929734');
       }
